@@ -33,7 +33,7 @@ export const fetchPost = async (id: string): Promise<Post> => {
   return res.data;
 };
 
-export type CreatePostData = Omit<Post, "id" | "createdAt" | "likes" | "comments">;
+export type CreatePostData = Omit<Post, "id" | "createdAt" | "likes" | "comments" | "author">;
 
 // 사용자가 작성한 새 글을 등록하고, 등록된 글 정보를 돌려준다. 실패 시 글은 저장되지 않으며 화면에서 안내한다.
 export const createPost = async (data: CreatePostData): Promise<Post> => {
@@ -52,7 +52,7 @@ export const toggleLike = async (id: string): Promise<Post> => {
   return res.data;
 };
 
-export type CreateCommentData = Pick<Comment, "content" | "author">;
+export type CreateCommentData = Pick<Comment, "content">;
 
 // 특정 글에 댓글을 달고, 저장된 댓글 정보를 돌려준다. 실패 시 댓글이 보이지 않으며 사용자에게 알린다.
 export const createComment = async (
