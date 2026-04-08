@@ -1,12 +1,18 @@
 "use client";
 
-import { ReactNode } from "react";
-import Navbar from "@/components/Navbar";
+import { ReactNode, useEffect } from "react";
+import Header from "@/components/Header";
 import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const { initialize } = useAuthStore();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   return (
     <div
@@ -18,7 +24,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
         background: "#fde047",
       }}
     >
-      <Navbar />
+      <Header />
       <main 
         style={{ 
           flex: 1, 
