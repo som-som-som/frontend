@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { Comment, Post, PostListItem } from "@/types/post";
+import type { LoginData, RegisterData, TokenResponse, User } from "@/types/auth";
 
 // 백엔드 주소를 코드에 박아두지 않고 환경(개발/배포)마다 바꿀 수 있게 둔다. 네트워크 오류는 호출하는 화면에서 처리한다.
 const api = axios.create({
@@ -52,4 +53,26 @@ export const createComment = async (
 // 댓글 한 건을 삭제한다. 성공 후 해당 댓글은 목록에서 사라져야 한다. 실패 시 삭제가 유지되지 않는다.
 export const deleteComment = async (commentId: string): Promise<void> => {
   await api.delete(`/comments/${commentId}`);
+};
+
+/**
+ * --- 인증(Auth) 관련 API ---
+ */
+
+// 회원가입 요청을 보냅니다. 성공 시 토큰과 가입된 사용자 정보를 반환합니다.
+export const register = async (data: RegisterData): Promise<TokenResponse> => {
+  const res = await api.post<TokenResponse>("/auth/register", data);
+  return res.data;
+};
+
+// 로그인 요청을 보냅니다. 성공 시 토큰과 사용자 정보를 반환합니다.
+export const login = async (data: LoginData): Promise<TokenResponse> => {
+  const res = await api.post<TokenResponse>("/auth/login", data);
+  return res.data;
+};
+
+// 현재 로그인된 사용자의 정보를 가져옵니다. (인증 토큰 필요)
+export const getMe = async (): Promise<User> => {
+  const res = await api.get<User>("/auth/me");
+  return res.data;
 };
