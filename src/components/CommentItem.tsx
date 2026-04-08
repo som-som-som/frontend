@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { deleteComment } from "@/lib/api";
 import { Comment } from "@/types/post";
+import { useAuthStore } from "@/store/authStore";
 
 // 상세 화면에서 댓글 한 건을 보여주기 위한 입력 형식입니다.
 interface CommentItemProps {
@@ -11,6 +12,9 @@ interface CommentItemProps {
 }
 
 export default function CommentItem({ comment, onDeleted }: CommentItemProps) {
+  const { user, isLoggedIn } = useAuthStore();
+  const isAuthor = isLoggedIn && user?.username === comment.author;
+
   // 댓글은 "누가 어떤 의견을 남겼는지"를 보여주는 신뢰 정보입니다.
   // 작성자/시간 표시가 없으면 대화 맥락이 약해져 커뮤니티 경험이 떨어질 수 있습니다.
   const formattedCreatedAt = new Date(comment.createdAt).toLocaleString("ko-KR");
@@ -43,24 +47,26 @@ export default function CommentItem({ comment, onDeleted }: CommentItemProps) {
           <strong>{comment.author}</strong>
           <span> · {formattedCreatedAt}</span>
         </div>
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={deleting}
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "7px",
-            background: "#fecaca",
-            color: "#000",
-            border: "2px solid #000",
-            padding: "6px 10px",
-            boxShadow: "2px 2px 0 #000",
-            cursor: deleting ? "not-allowed" : "pointer",
-            opacity: deleting ? 0.7 : 1,
-          }}
-        >
-          {deleting ? "삭제 중..." : "삭제"}
-        </button>
+        {isAuthor && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "7px",
+              background: "#fecaca",
+              color: "#000",
+              border: "2px solid #000",
+              padding: "6px 10px",
+              boxShadow: "2px 2px 0 #000",
+              cursor: deleting ? "not-allowed" : "pointer",
+              opacity: deleting ? 0.7 : 1,
+            }}
+          >
+            {deleting ? "삭제 중..." : "삭제"}
+          </button>
+        )}
       </div>
       <p style={{ margin: "8px 0 0" }}>{comment.content}</p>
     </div>

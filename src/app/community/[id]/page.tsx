@@ -11,6 +11,8 @@ import CommentItem from "@/components/CommentItem";
 import { createComment, deletePost, fetchPost, toggleLike } from "@/lib/api";
 // 게시글 데이터 구조(타입)를 가져와 상태를 안전하게 다룹니다.
 import { Post } from "@/types/post";
+import { useAuthStore } from "@/store/authStore";
+import Link from "next/link";
 
 // 픽셀 폰트 스타일을 여러 곳에서 재사용하기 위해 묶어 둡니다.
 const px = { fontFamily: '"Press Start 2P", monospace' } as const;
@@ -39,10 +41,11 @@ export default function PostDetailPage() {
   const [deleting, setDeleting] = useState(false);
   // 댓글 입력창의 현재 텍스트 상태입니다.
   const [commentInput, setCommentInput] = useState("");
-  // 댓글 작성자의 이름 입력 상태입니다.
-  const [commentAuthor, setCommentAuthor] = useState("");
   // 댓글 저장 요청이 진행 중인지 여부입니다(중복 클릭 방지).
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+
+  // Zustand 스토어에서 로그인 정보를 가져옵니다.
+  const { user, isLoggedIn } = useAuthStore();
 
   // 페이지 진입 시(또는 게시글 id 변경 시) 게시글 상세를 불러옵니다.
   useEffect(() => {
@@ -117,9 +120,9 @@ export default function PostDetailPage() {
 
   // 댓글 등록 버튼 클릭 시 서버에 새 댓글 저장을 요청하고, 응답 결과를 화면 목록에 바로 반영합니다.
   const handleComment = async () => {
-    // 게시글이 없거나 작성자/내용이 공백이면 전송하지 않습니다.
-    if (!post || !commentAuthor.trim() || !commentInput.trim()) {
-      alert("작성자와 댓글 내용을 모두 입력해 주세요.");
+    // 게시글이 없거나 내용이 공백이면 전송하지 않습니다.
+    if (!post || !commentInput.trim()) {
+      alert("댓글 내용을 입력해 주세요.");
       return;
     }
     if (commentSubmitting) return;
@@ -129,7 +132,6 @@ export default function PostDetailPage() {
     try {
       // 서버에 댓글 작성을 요청하고, 저장된 최종 댓글 정보를 응답으로 받습니다.
       const newComment = await createComment(post.id, {
-        author: commentAuthor.trim(),
         content: commentInput.trim(),
       });
 
@@ -141,7 +143,6 @@ export default function PostDetailPage() {
 
       // 입력 값을 초기화해 다음 댓글을 바로 작성할 수 있게 합니다.
       setCommentInput("");
-      setCommentAuthor("");
     } catch {
       // 네트워크/서버 오류 등으로 실패하면 사용자에게 안내합니다.
       alert("댓글을 등록하지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -195,6 +196,8 @@ export default function PostDetailPage() {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  const isPostAuthor = isLoggedIn && user?.username === post.author;
 
   // 게시글 상세 본문 UI를 렌더링합니다.
   return (
@@ -262,19 +265,21 @@ export default function PostDetailPage() {
               <span style={{ ...px, fontSize: "8px", color: "#444" }}>댓글 {post.comments.length}</span>
             </div>
 
-            {/* 게시글 삭제 버튼입니다. */}
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleting}
-              style={{
-                ...styles.deleteBtn,
-                opacity: deleting ? 0.7 : 1,
-                cursor: deleting ? "not-allowed" : "pointer",
-              }}
-            >
-              {deleting ? "삭제 중..." : "삭제"}
-            </button>
+            {/* 게시글 삭제 버튼입니다. (본인인 경우에만 표시) */}
+            {isPostAuthor && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{
+                  ...styles.deleteBtn,
+                  opacity: deleting ? 0.7 : 1,
+                  cursor: deleting ? "not-allowed" : "pointer",
+                }}
+              >
+                {deleting ? "삭제 중..." : "삭제"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -302,55 +307,49 @@ export default function PostDetailPage() {
 
         {/* 새 댓글을 입력하고 등록하는 카드입니다. */}
         <div style={styles.card}>
-          {/* 작성자 이름 입력 영역입니다. 누가 남긴 댓글인지 확인할 수 있습니다. */}
-          <div style={{ marginBottom: "10px" }}>
-            <label
-              style={{ ...px, fontSize: "7px", color: "#444", display: "block", marginBottom: "6px" }}
-            >
-              작성자 이름
-            </label>
-            <input
-              type="text"
-              value={commentAuthor}
-              onChange={(e) => setCommentAuthor(e.target.value)}
-              placeholder="이름을 입력하세요"
-              style={styles.authorInput}
-            />
-          </div>
-
-          {/* 댓글 본문 입력창입니다. */}
-          <textarea
-            value={commentInput}
-            onChange={(e) => setCommentInput(e.target.value.slice(0, MAX_COMMENT_LENGTH))}
-            placeholder="댓글을 입력하세요"
-            rows={4}
-            style={styles.textarea}
-          />
-          {/* 현재 입력 글자 수와 최대 제한을 함께 표시합니다. */}
-          <div style={{ ...px, fontSize: "7px", color: "#888", textAlign: "right", marginBottom: "12px" }}>
-            {commentInput.length} / {MAX_COMMENT_LENGTH}
-          </div>
-          {/* 댓글 등록 실행 버튼입니다. */}
-          <button
-            type="button"
-            onClick={handleComment}
-            disabled={
-              commentSubmitting || !commentAuthor.trim() || !commentInput.trim()
-            }
-            style={{
-              ...styles.blueBtn,
-              opacity:
-                commentSubmitting || !commentAuthor.trim() || !commentInput.trim()
-                  ? 0.6
-                  : 1,
-              cursor:
-                commentSubmitting || !commentAuthor.trim() || !commentInput.trim()
-                  ? "not-allowed"
-                  : "pointer",
-            }}
-          >
-            {commentSubmitting ? "등록 중..." : "댓글 달기"}
-          </button>
+          {isLoggedIn ? (
+            <>
+              {/* 댓글 본문 입력창입니다. */}
+              <textarea
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value.slice(0, MAX_COMMENT_LENGTH))}
+                placeholder="댓글을 입력하세요"
+                rows={4}
+                style={styles.textarea}
+              />
+              {/* 현재 입력 글자 수와 최대 제한을 함께 표시합니다. */}
+              <div style={{ ...px, fontSize: "7px", color: "#888", textAlign: "right", marginBottom: "12px" }}>
+                {commentInput.length} / {MAX_COMMENT_LENGTH}
+              </div>
+              {/* 댓글 등록 실행 버튼입니다. */}
+              <button
+                type="button"
+                onClick={handleComment}
+                disabled={commentSubmitting || !commentInput.trim()}
+                style={{
+                  ...styles.blueBtn,
+                  opacity: commentSubmitting || !commentInput.trim() ? 0.6 : 1,
+                  cursor: commentSubmitting || !commentInput.trim() ? "not-allowed" : "pointer",
+                }}
+              >
+                {commentSubmitting ? "등록 중..." : "댓글 달기"}
+              </button>
+            </>
+          ) : (
+            <div style={{ textAlign: "center", padding: "10px 0" }}>
+              <p style={{ ...px, fontSize: "8px", color: "#666", marginBottom: "16px" }}>
+                로그인 후 댓글을 작성할 수 있습니다.
+              </p>
+              <Link href="/login" style={{
+                ...styles.blueBtn,
+                fontSize: "10px",
+                textDecoration: "none",
+                display: "inline-block"
+              }}>
+                로그인하러 가기
+              </Link>
+            </div>
+          )}
         </div>
 
 

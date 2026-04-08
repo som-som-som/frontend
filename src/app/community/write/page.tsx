@@ -17,15 +17,13 @@ export default function CommunityWritePage() {
   const [title, setTitle] = useState("");
   // 사용자가 입력한 본문 내용을 저장한다.
   const [content, setContent] = useState("");
-  // 작성자 이름을 저장하며, 비워두면 제출 자체가 막힌다.
-  const [author, setAuthor] = useState("");
   // API 호출 중인지 여부를 저장해 중복 클릭·로딩 문구를 제어한다.
   const [submitting, setSubmitting] = useState(false);
 
   // "등록하기"를 눌렀을 때 입력값 검사, 서버 저장, 이동을 한 번에 처리한다.
   const handleSubmit = async () => {
     // 비어 있는 필드가 있으면 서버까지 가지 않고 즉시 안내한다.
-    if (!title.trim() || !content.trim() || !author.trim()) {
+    if (!title.trim() || !content.trim()) {
       alert("모든 항목을 입력해주세요.");
       return;
     }
@@ -37,7 +35,6 @@ export default function CommunityWritePage() {
       await createPost({
         title: title.trim(),
         content: content.trim(),
-        author: author.trim(),
       });
       // 성공하면 목록 화면으로 이동해 방금 작성한 글을 목록에서 확인하게 한다.
       router.push("/community");
@@ -51,7 +48,7 @@ export default function CommunityWritePage() {
 
   // 버튼 비활성화 조건: 필수 입력값 부족 또는 API 호출 중.
   const isSubmitDisabled =
-    submitting || !title.trim() || !content.trim() || !author.trim();
+    submitting || !title.trim() || !content.trim();
 
   return (
     // 화면 전체 배경과 중앙 정렬을 담당하는 바깥 컨테이너다.
@@ -104,29 +101,6 @@ export default function CommunityWritePage() {
           <h1 style={{ ...px, fontSize: "12px", color: "#000", marginBottom: "24px", letterSpacing: "2px" }}>
             새 글 작성
           </h1>
-
-          {/* 작성자 입력 라벨 */}
-          <p style={{ ...px, fontSize: "8px", color: "#444", marginBottom: "8px" }}>작성자</p>
-          <input
-            /* 입력값과 화면을 동기화한다. */
-            value={author}
-            /* 사용자가 입력한 작성자 이름을 상태에 반영한다. */
-            onChange={(e) => setAuthor(e.target.value)}
-            /* 실제로 화면에 표시될 작성자 이름을 그대로 받는다. */
-            placeholder="이름을 입력하세요"
-            /* 과도하게 긴 이름 입력을 제한해 UI 깨짐을 방지한다. */
-            maxLength={20}
-            style={{
-              ...px,
-              width: "100%",
-              boxSizing: "border-box",
-              fontSize: "8px",
-              border: "2px solid #000",
-              padding: "12px",
-              marginBottom: "16px",
-              outline: "none",
-            }}
-          />
 
           {/* 제목 입력 라벨 */}
           <p style={{ ...px, fontSize: "8px", color: "#444", marginBottom: "8px" }}>제목</p>
