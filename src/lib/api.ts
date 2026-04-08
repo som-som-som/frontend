@@ -8,6 +8,19 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// [중요] 모든 API 요청이 나가기 전에 실행되는 인터셉터입니다.
+// localStorage에 저장된 토큰이 있다면 요청 헤더에 자동으로 'Authorization: Bearer <토큰>'을 추가합니다.
+api.interceptors.request.use((config) => {
+  // SSR(서버 사이드 렌더링) 환경에서는 window/localStorage가 없으므로 체크가 필요합니다.
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 // 게시글 목록을 불러와 메인·목록 화면에 보여준다. 실패 시 목록이 비거나 에러 메시지를 띄우는 쪽은 화면 책임이다.
 export const fetchPosts = async (): Promise<PostListItem[]> => {
   const res = await api.get<PostListItem[]>("/posts");
